@@ -212,6 +212,11 @@ def interp_block(prev_layer, level, feature_map_shape, input_shape):
                               2: 45,
                               3: 30,
                               6: 15}
+    elif input_shape == (190, 835):
+        kernel_strides_map = {1: 20,
+                              2: 15,
+                              3: 10,
+                              6: 5}
     else:
         print("Pooling parameters for input shape ",
               input_shape, " are not defined.")
