@@ -13,7 +13,7 @@ import tensorflow as tf
 
 from .config import IMAGE_ORDERING
 from .model_utils import get_segmentation_model, resize_image
-from .panoramic_layers import Conv2DPano
+from .panoramic_layers import Conv2DPano, MaxPooling2DPano
 
 learning_rate = 1e-3  # Layer specific learning rate
 # Weight decay not implemented
@@ -160,7 +160,7 @@ def ResNet(inp, layers):
     bn1 = BN(name=names[5])(cnv1)  # "conv1_3_3x3/bn"
     relu1 = Activation('relu')(bn1)  # "conv1_3_3x3/relu"
 
-    res = MaxPooling2D(pool_size=(3, 3), padding='same',
+    res = MaxPooling2DPano(pool_size=(3, 3), padding='same',
                        strides=(2, 2))(relu1)  # "pool1_3x3_s2"
 
     # ---Residual layers(body of network)
