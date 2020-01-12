@@ -72,7 +72,7 @@ def predict(model=None, inp=None, out_fname=None, checkpoints_path=None):
         seg_img[:, :, 1] += ((pr[:, :] == c)*(colors[c][1])).astype('uint8')
         seg_img[:, :, 2] += ((pr[:, :] == c)*(colors[c][2])).astype('uint8')
 
-    seg_img = cv2.resize(seg_img, (orininal_w, orininal_h))
+    seg_img = cv2.resize(seg_img, (orininal_w, orininal_h), interpolation=cv2.INTER_NEAREST)
 
     if out_fname is not None:
         cv2.imwrite(out_fname, seg_img)
