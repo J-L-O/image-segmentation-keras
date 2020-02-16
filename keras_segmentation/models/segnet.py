@@ -3,6 +3,7 @@ import os
 from keras.models import *
 from keras.layers import *
 
+from keras_segmentation.models.panoramic_layers import Conv2DPano
 from .config import IMAGE_ORDERING
 from .model_utils import get_segmentation_model
 from .vgg16 import get_vgg_encoder
@@ -17,27 +18,27 @@ def segnet_decoder(f, n_classes, n_up=3):
 
     o = f
     o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
-    o = (Conv2D(512, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
+    o = (Conv2DPano(512, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
     o = (BatchNormalization())(o)
 
     o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
     o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
-    o = (Conv2D(256, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
+    o = (Conv2DPano(256, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
     o = (BatchNormalization())(o)
 
     for _ in range(n_up-2):
         o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
         o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
-        o = (Conv2D(128, (3, 3), padding='valid',
+        o = (Conv2DPano(128, (3, 3), padding='valid',
              data_format=IMAGE_ORDERING))(o)
         o = (BatchNormalization())(o)
 
     o = (UpSampling2D((2, 2), data_format=IMAGE_ORDERING))(o)
     o = (ZeroPadding2D((1, 1), data_format=IMAGE_ORDERING))(o)
-    o = (Conv2D(64, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
+    o = (Conv2DPano(64, (3, 3), padding='valid', data_format=IMAGE_ORDERING))(o)
     o = (BatchNormalization())(o)
 
-    o = Conv2D(n_classes, (3, 3), padding='same',
+    o = Conv2DPano(n_classes, (3, 3), padding='same',
                data_format=IMAGE_ORDERING)(o)
 
     return o

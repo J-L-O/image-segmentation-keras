@@ -9,7 +9,7 @@ import keras.backend as K
 
 
 from .config import IMAGE_ORDERING
-
+from .panoramic_layers import Conv2DPano, MaxPooling2DPano
 
 if IMAGE_ORDERING == 'channels_first':
     pretrained_url = "https://github.com/fchollet/deep-learning-models/" \
@@ -52,17 +52,17 @@ def identity_block(input_tensor, kernel_size, filters, stage, block):
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING,
+    x = Conv2DPano(filters1, (1, 1), data_format=IMAGE_ORDERING,
                name=conv_name_base + '2a')(input_tensor)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
+    x = Conv2DPano(filters2, kernel_size, data_format=IMAGE_ORDERING,
                padding='same', name=conv_name_base + '2b')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+    x = Conv2DPano(filters3, (1, 1), data_format=IMAGE_ORDERING,
                name=conv_name_base + '2c')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
@@ -96,21 +96,21 @@ def conv_block(input_tensor, kernel_size, filters, stage, block,
     conv_name_base = 'res' + str(stage) + block + '_branch'
     bn_name_base = 'bn' + str(stage) + block + '_branch'
 
-    x = Conv2D(filters1, (1, 1), data_format=IMAGE_ORDERING, strides=strides,
+    x = Conv2DPano(filters1, (1, 1), data_format=IMAGE_ORDERING, strides=strides,
                name=conv_name_base + '2a')(input_tensor)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2a')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters2, kernel_size, data_format=IMAGE_ORDERING,
+    x = Conv2DPano(filters2, kernel_size, data_format=IMAGE_ORDERING,
                padding='same', name=conv_name_base + '2b')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2b')(x)
     x = Activation('relu')(x)
 
-    x = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+    x = Conv2DPano(filters3, (1, 1), data_format=IMAGE_ORDERING,
                name=conv_name_base + '2c')(x)
     x = BatchNormalization(axis=bn_axis, name=bn_name_base + '2c')(x)
 
-    shortcut = Conv2D(filters3, (1, 1), data_format=IMAGE_ORDERING,
+    shortcut = Conv2DPano(filters3, (1, 1), data_format=IMAGE_ORDERING,
                       strides=strides, name=conv_name_base + '1')(input_tensor)
     shortcut = BatchNormalization(
         axis=bn_axis, name=bn_name_base + '1')(shortcut)
@@ -141,13 +141,13 @@ def get_resnet50_encoder(input_height=224,  input_width=224,
         bn_axis = 1
 
     x = ZeroPadding2D((3, 3), data_format=IMAGE_ORDERING)(img_input)
-    x = Conv2D(64, (7, 7), data_format=IMAGE_ORDERING,
+    x = Conv2DPano(64, (7, 7), data_format=IMAGE_ORDERING,
                strides=(2, 2), name='conv1')(x)
     f1 = x
 
     x = BatchNormalization(axis=bn_axis, name='bn_conv1')(x)
     x = Activation('relu')(x)
-    x = MaxPooling2D((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x)
+    x = MaxPooling2DPano((3, 3), data_format=IMAGE_ORDERING, strides=(2, 2))(x)
 
     x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1))
     x = identity_block(x, 3, [64, 64, 256], stage=2, block='b')
@@ -173,7 +173,7 @@ def get_resnet50_encoder(input_height=224,  input_width=224,
     x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c')
     f5 = x
 
-    x = AveragePooling2D(
+    x = AveragePooling2DPano(
         (7, 7), data_format=IMAGE_ORDERING, name='avg_pool')(x)
     # f6 = x
 

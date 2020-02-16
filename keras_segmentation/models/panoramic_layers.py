@@ -1,7 +1,7 @@
 from math import ceil
 
 from keras.engine import Layer
-from keras.layers import Conv2D, MaxPooling2D
+from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
 import tensorflow as tf
 
 
@@ -116,6 +116,65 @@ class MaxPooling2DPano(Layer):
             self.pano_padding = PanoPadding2D(self.padded_pixels)
 
         return super(MaxPooling2DPano, self).build(input_shape)
+
+    def compute_output_shape(self, input_shape):
+
+        if self.padding == 'same':
+            padded_shape = self.pano_padding.compute_output_shape(input_shape)
+        else:
+            padded_shape = input_shape
+
+        return self.pool.compute_output_shape(padded_shape)
+
+    def _compute_padding(self, shape, kernel_size, strides):
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+
+        if type(strides) == int:
+            strides = (strides, strides)
+
+        out_height = ceil(float(shape[0]) / float(strides[0]))
+        out_width = ceil(float(shape[1]) / float(strides[1]))
+
+        pad_along_height = max((out_height - 1) * strides[0] +
+                               kernel_size[0] - shape[0], 0)
+        pad_along_width = max((out_width - 1) * strides[1] +
+                              kernel_size[1] - shape[1], 0)
+        pad_top = pad_along_height // 2
+        pad_bottom = pad_along_height - pad_top
+        pad_left = pad_along_width // 2
+        pad_right = pad_along_width - pad_left
+
+        return pad_left, pad_right, pad_top, pad_bottom
+
+    def call(self, x, **kwargs):
+        padded = x
+
+        if self.padding == 'same':
+            padded = self.pano_padding(x)
+
+        out = self.pool(padded, **kwargs)
+
+        return out
+
+
+class AveragePooling2DPano(Layer):
+
+    def __init__(self, pool_size=(2, 2), strides=None, padding='valid', data_format=None, **kwargs):
+        self.pool = AveragePooling2D(pool_size=pool_size, strides=strides, padding='valid',
+                                 data_format=data_format, **kwargs)
+        self.padding = padding
+        self.pool_size = pool_size
+        self.strides = strides
+
+        super(AveragePooling2DPano, self).__init__()
+
+    def build(self, input_shape):
+        if self.padding == 'same':
+            self.padded_pixels = self._compute_padding((input_shape[1], input_shape[2]), self.pool_size, self.strides)
+            self.pano_padding = PanoPadding2D(self.padded_pixels)
+
+        return super(AveragePooling2DPano, self).build(input_shape)
 
     def compute_output_shape(self, input_shape):
 

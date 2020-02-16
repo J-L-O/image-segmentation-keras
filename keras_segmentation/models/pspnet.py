@@ -4,6 +4,7 @@ from keras.models import *
 from keras.layers import *
 import keras.backend as K
 
+from keras_segmentation.models.panoramic_layers import Conv2DPano
 from .config import IMAGE_ORDERING
 from .model_utils import get_segmentation_model, resize_image
 from .vgg16 import get_vgg_encoder
@@ -31,9 +32,9 @@ def pool_block(feats, pool_factor):
         int(np.round(float(h) / pool_factor)),
         int(np.round(float(w) / pool_factor))]
 
-    x = AveragePooling2D(pool_size, data_format=IMAGE_ORDERING,
+    x = AveragePooling2DPano(pool_size, data_format=IMAGE_ORDERING,
                          strides=strides, padding='same')(feats)
-    x = Conv2D(512, (1, 1), data_format=IMAGE_ORDERING,
+    x = Conv2DPano(512, (1, 1), data_format=IMAGE_ORDERING,
                padding='same', use_bias=False)(x)
     x = BatchNormalization()(x)
     x = Activation('relu')(x)
@@ -63,11 +64,11 @@ def _pspnet(n_classes, encoder,  input_height=384, input_width=576):
 
     o = Concatenate(axis=MERGE_AXIS)(pool_outs)
 
-    o = Conv2D(512, (1, 1), data_format=IMAGE_ORDERING, use_bias=False)(o)
+    o = Conv2DPano(512, (1, 1), data_format=IMAGE_ORDERING, use_bias=False)(o)
     o = BatchNormalization()(o)
     o = Activation('relu')(o)
 
-    o = Conv2D(n_classes, (3, 3), data_format=IMAGE_ORDERING,
+    o = Conv2DPano(n_classes, (3, 3), data_format=IMAGE_ORDERING,
                padding='same')(o)
     o = resize_image(o, (8, 8), data_format=IMAGE_ORDERING)
 
