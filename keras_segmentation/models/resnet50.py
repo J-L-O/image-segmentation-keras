@@ -9,7 +9,7 @@ import keras.backend as K
 
 
 from .config import IMAGE_ORDERING
-from .panoramic_layers import Conv2DPano, MaxPooling2DPano
+from .panoramic_layers import Conv2DPano, MaxPooling2DPano, AveragePooling2DPano
 
 if IMAGE_ORDERING == 'channels_first':
     pretrained_url = "https://github.com/fchollet/deep-learning-models/" \
