@@ -4,7 +4,7 @@ from keras.models import *
 from keras.layers import *
 import keras.backend as K
 
-from keras_segmentation.models.panoramic_layers import Conv2DPano
+from keras_segmentation.models.panoramic_layers import Conv2DPano, AveragePooling2DPano
 from .config import IMAGE_ORDERING
 from .model_utils import get_segmentation_model, resize_image
 from .vgg16 import get_vgg_encoder
