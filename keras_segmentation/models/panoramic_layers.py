@@ -5,14 +5,14 @@ from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
 import tensorflow as tf
 
 
-class PanoPadding2D(Layer):
+class HorizontalRingPadding2D(Layer):
 
-    def __init__(self, padding, **kwargs):
-        self.padding = padding
-        super(PanoPadding2D, self).__init__(**kwargs)
+    def __init__(self, shape, kernel_size, strides, **kwargs):
+        self.padding = self.compute_padding(shape, kernel_size, strides)
+        super(HorizontalRingPadding2D, self).__init__(**kwargs)
 
     def build(self, input_shape):
-        return super(PanoPadding2D, self).build(input_shape)
+        return super(HorizontalRingPadding2D, self).build(input_shape)
 
     def compute_output_shape(self, input_shape):
         padded_shape = input_shape
@@ -31,6 +31,26 @@ class PanoPadding2D(Layer):
         padded = tf.pad(padded, ((0, 0), (0, 0), (self.padding[2], self.padding[3]), (0, 0)), constant_values=0)
 
         return padded
+
+    @staticmethod
+    def compute_padding(shape, kernel_size, strides):
+        if type(kernel_size) == int:
+            kernel_size = (kernel_size, kernel_size)
+
+        if type(strides) == int:
+            strides = (strides, strides)
+
+        out_height = ceil(float(shape[0]) / float(strides[0]))
+        out_width = ceil(float(shape[1]) / float(strides[1]))
+
+        pad_along_height = max((out_height - 1) * strides[0] + kernel_size[0] - shape[0], 0)
+        pad_along_width = max((out_width - 1) * strides[1] + kernel_size[1] - shape[1], 0)
+        pad_top = pad_along_height // 2
+        pad_bottom = pad_along_height - pad_top
+        pad_left = pad_along_width // 2
+        pad_right = pad_along_width - pad_left
+
+        return pad_left, pad_right, pad_top, pad_bottom
 
 
 class Conv2DPano(Layer):
@@ -53,46 +73,24 @@ class Conv2DPano(Layer):
 
     def build(self, input_shape):
         if self.padding == 'same':
-            self.padded_pixels = self._compute_padding((input_shape[1], input_shape[2]), self.kernel_size, self.strides)
-            self.pano_padding = PanoPadding2D(self.padded_pixels)
+            self.ring_padding = HorizontalRingPadding2D((input_shape[1], input_shape[2]), self.kernel_size, self.strides)
 
         return super(Conv2DPano, self).build(input_shape)
 
     def compute_output_shape(self, input_shape):
 
         if self.padding == 'same':
-            padded_shape = self.pano_padding.compute_output_shape(input_shape)
+            padded_shape = self.ring_padding.compute_output_shape(input_shape)
         else:
             padded_shape = input_shape
 
         return self.conv.compute_output_shape(padded_shape)
 
-    def _compute_padding(self, shape, kernel_size, strides):
-        if type(kernel_size) == int:
-            kernel_size = (kernel_size, kernel_size)
-
-        if type(strides) == int:
-            strides = (strides, strides)
-
-        out_height = ceil(float(shape[0]) / float(strides[0]))
-        out_width = ceil(float(shape[1]) / float(strides[1]))
-
-        pad_along_height = max((out_height - 1) * strides[0] +
-                               kernel_size[0] - shape[0], 0)
-        pad_along_width = max((out_width - 1) * strides[1] +
-                              kernel_size[1] - shape[1], 0)
-        pad_top = pad_along_height // 2
-        pad_bottom = pad_along_height - pad_top
-        pad_left = pad_along_width // 2
-        pad_right = pad_along_width - pad_left
-
-        return pad_left, pad_right, pad_top, pad_bottom
-
     def call(self, x, **kwargs):
         padded = x
 
         if self.padding == 'same':
-            padded = self.pano_padding(x)
+            padded = self.ring_padding(x)
 
         out = self.conv(padded, **kwargs)
 
@@ -112,46 +110,24 @@ class MaxPooling2DPano(Layer):
 
     def build(self, input_shape):
         if self.padding == 'same':
-            self.padded_pixels = self._compute_padding((input_shape[1], input_shape[2]), self.pool_size, self.strides)
-            self.pano_padding = PanoPadding2D(self.padded_pixels)
+            self.ring_padding = HorizontalRingPadding2D((input_shape[1], input_shape[2]), self.pool_size, self.strides)
 
         return super(MaxPooling2DPano, self).build(input_shape)
 
     def compute_output_shape(self, input_shape):
 
         if self.padding == 'same':
-            padded_shape = self.pano_padding.compute_output_shape(input_shape)
+            padded_shape = self.ring_padding.compute_output_shape(input_shape)
         else:
             padded_shape = input_shape
 
         return self.pool.compute_output_shape(padded_shape)
 
-    def _compute_padding(self, shape, kernel_size, strides):
-        if type(kernel_size) == int:
-            kernel_size = (kernel_size, kernel_size)
-
-        if type(strides) == int:
-            strides = (strides, strides)
-
-        out_height = ceil(float(shape[0]) / float(strides[0]))
-        out_width = ceil(float(shape[1]) / float(strides[1]))
-
-        pad_along_height = max((out_height - 1) * strides[0] +
-                               kernel_size[0] - shape[0], 0)
-        pad_along_width = max((out_width - 1) * strides[1] +
-                              kernel_size[1] - shape[1], 0)
-        pad_top = pad_along_height // 2
-        pad_bottom = pad_along_height - pad_top
-        pad_left = pad_along_width // 2
-        pad_right = pad_along_width - pad_left
-
-        return pad_left, pad_right, pad_top, pad_bottom
-
     def call(self, x, **kwargs):
         padded = x
 
         if self.padding == 'same':
-            padded = self.pano_padding(x)
+            padded = self.ring_padding(x)
 
         out = self.pool(padded, **kwargs)
 
@@ -171,46 +147,24 @@ class AveragePooling2DPano(Layer):
 
     def build(self, input_shape):
         if self.padding == 'same':
-            self.padded_pixels = self._compute_padding((input_shape[1], input_shape[2]), self.pool_size, self.strides)
-            self.pano_padding = PanoPadding2D(self.padded_pixels)
+            self.ring_padding = HorizontalRingPadding2D((input_shape[1], input_shape[2]), self.pool_size, self.strides)
 
         return super(AveragePooling2DPano, self).build(input_shape)
 
     def compute_output_shape(self, input_shape):
 
         if self.padding == 'same':
-            padded_shape = self.pano_padding.compute_output_shape(input_shape)
+            padded_shape = self.ring_padding.compute_output_shape(input_shape)
         else:
             padded_shape = input_shape
 
         return self.pool.compute_output_shape(padded_shape)
 
-    def _compute_padding(self, shape, kernel_size, strides):
-        if type(kernel_size) == int:
-            kernel_size = (kernel_size, kernel_size)
-
-        if type(strides) == int:
-            strides = (strides, strides)
-
-        out_height = ceil(float(shape[0]) / float(strides[0]))
-        out_width = ceil(float(shape[1]) / float(strides[1]))
-
-        pad_along_height = max((out_height - 1) * strides[0] +
-                               kernel_size[0] - shape[0], 0)
-        pad_along_width = max((out_width - 1) * strides[1] +
-                              kernel_size[1] - shape[1], 0)
-        pad_top = pad_along_height // 2
-        pad_bottom = pad_along_height - pad_top
-        pad_left = pad_along_width // 2
-        pad_right = pad_along_width - pad_left
-
-        return pad_left, pad_right, pad_top, pad_bottom
-
     def call(self, x, **kwargs):
         padded = x
 
         if self.padding == 'same':
-            padded = self.pano_padding(x)
+            padded = self.ring_padding(x)
 
         out = self.pool(padded, **kwargs)
 
