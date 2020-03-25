@@ -10,6 +10,8 @@
 
 Implementation of various Deep Image Segmentation models in keras.
 
+The main change in this fork is the introduction of horizontal ring-padding in ./models/panoramic_layers.py to improve performance on panoramic images.
+
 Link to the full blog post with tutorial : https://divamgupta.com/image-segmentation/2019/06/06/deep-learning-semantic-segmentation-keras.html
 
 <p align="center">
