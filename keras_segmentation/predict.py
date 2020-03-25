@@ -5,6 +5,7 @@ import os
 
 import cv2
 import numpy as np
+from PIL import Image
 from tqdm import tqdm
 from keras.models import load_model
 
@@ -155,3 +156,34 @@ def evaluate( model=None , inp_images=None , annotations=None,inp_images_dir=Non
     return {"frequency_weighted_IU":frequency_weighted_IU , "mean_IU":mean_IU , "class_wise_IU":cl_wise_score }
 
 
+# Convenience function to separate prediction and evaluation
+def evaluate_from_files(predictions, ground_truth, n_classes):
+    paths = get_pairs_from_paths(ground_truth, predictions)
+    paths = list(zip(*paths))
+    inp_images = list(paths[0])
+    annotations = list(paths[1])
+
+    tp = np.zeros(n_classes)
+    fp = np.zeros(n_classes)
+    fn = np.zeros(n_classes)
+    n_pixels = np.zeros(n_classes)
+
+    for inp, ann in tqdm(zip(inp_images, annotations)):
+        pr = np.array(Image.open(inp))
+        gt = np.array(Image.open(ann))
+
+        pr = pr.flatten()
+        gt = gt.flatten()
+
+        for cl_i in range(n_classes):
+            tp[cl_i] += np.sum((pr == cl_i) * (gt == cl_i))
+            fp[cl_i] += np.sum((pr == cl_i) * (gt != cl_i))
+            fn[cl_i] += np.sum((pr != cl_i) * (gt == cl_i))
+            n_pixels[cl_i] += np.sum(gt == cl_i)
+
+    cl_wise_score = tp / (tp + fp + fn + 0.000000000001)
+    n_pixels_norm = n_pixels / np.sum(n_pixels)
+    frequency_weighted_IU = np.sum(cl_wise_score * n_pixels_norm)
+    mean_IU = np.mean(cl_wise_score)
+
+    return frequency_weighted_IU, mean_IU, cl_wise_score
